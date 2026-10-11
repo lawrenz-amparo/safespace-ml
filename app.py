@@ -6,6 +6,7 @@ import numpy as np
 from transformers import BertTokenizer, BertModel
 import traceback
 from huggingface_hub import hf_hub_download
+import os
 
 # Configuration
 class Config:
@@ -118,7 +119,8 @@ try:
     model = AdvancedBERTSkipRNN(config)
 
     print("Downloading model from Hugging Face Hub...")
-    checkpoint_path = hf_hub_download(repo_id="marknicholas/uplb-oash", filename="best_model.pt")
+    # MODEL_PATH env var lets you use a local checkpoint instead of downloading
+    checkpoint_path = os.environ.get("MODEL_PATH") or hf_hub_download(repo_id="marknicholas/uplb-oash", filename="best_model.pt")
     print(f"Model downloaded to {checkpoint_path}")
 
     checkpoint_files = [checkpoint_path]
@@ -313,4 +315,4 @@ def home():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=7860, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 7860)), debug=False)

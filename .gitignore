@@ -1,1 +1,5 @@
 *.csv
+.venv/
+tools/
+__pycache__/
+models/
