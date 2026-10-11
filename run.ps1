@@ -1,13 +1,12 @@
-# Runs the harassment model on this PC and connects it to the live site.
-#   1. Installs dependencies (first run only)
-#   2. Opens a Cloudflare tunnel so the internet can reach the model
-#   3. Points the live site's /api/predict at the tunnel (edits netlify.toml on GitHub)
-#   4. Runs the model until you press Ctrl+C
+# Runs the harassment model on this PC at http://127.0.0.1:7860.
+# The live site calls that address from the browser, so AI analysis works
+# in a browser on this same computer while this window is open.
 #
-# Usage: run.bat              (or: powershell -ExecutionPolicy Bypass -File run.ps1)
-#        run.bat -NoTunnel    (model only, on http://localhost:7860)
+# Usage: run.bat            (or: powershell -ExecutionPolicy Bypass -File run.ps1)
+#        run.bat -Tunnel    (also expose it publicly via a Cloudflare tunnel and
+#                            point netlify.toml at it; needs gh and a Netlify redeploy)
 param(
-    [switch]$NoTunnel,
+    [switch]$Tunnel,
     [int]$Port = 7860,
     [string]$SiteRepo = 'lawrenz-amparo/safespace'
 )
@@ -41,9 +40,9 @@ if (-not (Test-Path $modelFile)) {
 }
 $env:MODEL_PATH = $modelFile
 
-# 2 + 3. Tunnel and live-site redirect
-$tunnel = $null
-if (-not $NoTunnel) {
+# Optional: public tunnel and live-site redirect
+$tunnelProc = $null
+if ($Tunnel) {
     $cf = Join-Path $PSScriptRoot 'tools\cloudflared.exe'
     if (-not (Test-Path $cf)) {
         Write-Host '==> Downloading cloudflared...'
@@ -55,7 +54,7 @@ if (-not $NoTunnel) {
     Write-Host '==> Starting Cloudflare tunnel...'
     $log = Join-Path $PSScriptRoot 'tools\tunnel.log'
     Remove-Item $log -ErrorAction SilentlyContinue
-    $tunnel = Start-Process $cf -ArgumentList 'tunnel', '--no-autoupdate', '--url', "http://localhost:$Port" `
+    $tunnelProc = Start-Process $cf -ArgumentList 'tunnel', '--no-autoupdate', '--url', "http://localhost:$Port" `
         -RedirectStandardError $log -RedirectStandardOutput "$log.out" -WindowStyle Hidden -PassThru
 
     $url = $null
@@ -66,7 +65,7 @@ if (-not $NoTunnel) {
             if ($m) { $url = $m.Matches[0].Value }
         }
     }
-    if (-not $url) { Stop-Process -Id $tunnel.Id -ErrorAction SilentlyContinue; throw "Tunnel did not start; see $log" }
+    if (-not $url) { Stop-Process -Id $tunnelProc.Id -ErrorAction SilentlyContinue; throw "Tunnel did not start; see $log" }
     Write-Host "==> Public URL: $url"
 
     if (Get-Command gh -ErrorAction SilentlyContinue) {
@@ -89,5 +88,5 @@ $env:PYTHONIOENCODING = 'utf-8'
 try {
     & $py app.py
 } finally {
-    if ($tunnel) { Stop-Process -Id $tunnel.Id -ErrorAction SilentlyContinue }
+    if ($tunnelProc) { Stop-Process -Id $tunnelProc.Id -ErrorAction SilentlyContinue }
 }

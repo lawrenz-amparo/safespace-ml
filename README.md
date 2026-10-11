@@ -3,10 +3,9 @@
 Harassment detection model (BERT + RNN) behind the AI analysis on
 https://uplb-oash.netlify.app/report.
 
-## Run it and connect it to the live site (Windows)
+## Run it (Windows)
 
-Requirements: Python 3.10–3.13, Git, and the [GitHub CLI](https://cli.github.com/)
-signed in as an account with push access to `lawrenz-amparo/safespace` (`gh auth login`).
+Requirements: Python 3.10–3.13 and Git.
 
 ```
 git clone https://github.com/lawrenz-amparo/safespace-ml.git
@@ -14,20 +13,16 @@ cd safespace-ml
 run.bat
 ```
 
-`run.bat` does everything:
+The first run installs dependencies and downloads the model (~2 GB). It's ready when
+you see `Running on http://127.0.0.1:7860`. Keep the window open; Ctrl+C stops it.
 
-1. Creates `.venv` and installs dependencies (first run only).
-2. Downloads the model checkpoint from the `model-v1` release (first run only).
-3. Starts a Cloudflare tunnel, which gives this PC a public `https://….trycloudflare.com` URL.
-4. Updates `netlify.toml` in `lawrenz-amparo/safespace` so the live site's `/api/predict`
-   goes to that URL. Netlify redeploys within about 30 seconds.
-5. Runs the model. Keep the window open; press Ctrl+C to stop.
+The site (`lawrenz-amparo/safespace`) calls `http://127.0.0.1:7860/predict` from the
+browser, so AI analysis works in a browser **on the same computer** that runs `run.bat`.
+On other devices, reports still submit, with the AI fields saved as "Not Available".
+Chrome may ask once to allow the site to access your local network: click Allow.
 
-The tunnel URL changes on every run; step 4 handles that automatically.
-AI analysis on the live site only works while `run.bat` is running.
-Reports still submit without it, saved as "Not Available".
-
-Model only, no tunnel: `run.bat -NoTunnel` → http://localhost:7860
+`run.bat -Tunnel` also exposes the model publicly through a Cloudflare tunnel and
+updates `netlify.toml` (needs the GitHub CLI and a Netlify redeploy each run).
 
 ## API
 
