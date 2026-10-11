@@ -9,7 +9,7 @@
 param(
     [switch]$NoTunnel,
     [int]$Port = 7860,
-    [string]$SiteRepo = 'Renzuren/safespace'
+    [string]$SiteRepo = 'lawrenz-amparo/safespace'
 )
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
